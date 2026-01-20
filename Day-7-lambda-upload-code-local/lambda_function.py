@@ -40,7 +40,7 @@ def lambda_handler(event, context):
             """
             cursor.execute(create_table_sql)
 
-            print(f"Database '{new_db_name}' and table '{table_name}' success.")
+            print(f"Database '{new_db_name}' and table '{table_name}' created successfully.")
             return {
                 'statusCode': 200,
                 'body': f"Database '{new_db_name}' and table '{table_name}' created successfully."
