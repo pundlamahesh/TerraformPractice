@@ -38,14 +38,14 @@ resource "aws_subnet" "public_02" {
 resource "aws_subnet" "private_03" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.0.32/28"
-  availability_zone = data.aws_availability_zones.available.names[2]
+  availability_zone = data.aws_availability_zones.available.names[0]
   tags = { Name = "SUBNET03_PRIVATE" }
 }
 
 resource "aws_subnet" "private_05" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.0.64/28"
-  availability_zone = data.aws_availability_zones.available.names[4]
+  availability_zone = data.aws_availability_zones.available.names[1]
   tags = { Name = "SUBNET05_PRIVATE" }
 }
 
@@ -114,6 +114,15 @@ resource "aws_route_table_association" "private_assoc_05" {
   route_table_id = aws_route_table.private_rt.id
 }
 
+resource "aws_route_table_association" "private_assoc_07" {
+  subnet_id      = aws_subnet.db_07.id
+  route_table_id = aws_route_table.private_rt.id
+}
+
+resource "aws_route_table_association" "private_assoc_08" {
+  subnet_id      = aws_subnet.db_08.id
+  route_table_id = aws_route_table.private_rt.id
+}
 # ---------------- SECURITY GROUPS ----------------
 resource "aws_security_group" "web_sg" {
   name   = "demo-sg"
@@ -140,6 +149,34 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+# database security group
+resource "aws_security_group" "rds-sg" {
+  name        = "rds-sg"
+  description = "Allow inbound "
+  vpc_id      = aws_vpc.main.id
+  depends_on = [ aws_vpc.main ]
+
+ ingress {
+    description     = "mysql/aroura"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  
+ }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "rds-sg"
+  }
+
+}
 #-------------------KEYPAIR Creation and download--------------
 resource "tls_private_key" "ec2_key" {
   algorithm = "RSA"
@@ -156,7 +193,6 @@ resource "local_file" "private_key_pem" {
   content         = tls_private_key.ec2_key.private_key_pem
   file_permission = "0400"
 }
-
 
 # ---------------- EC2 INSTANCES ----------------
 resource "aws_instance" "public_ec2" {
